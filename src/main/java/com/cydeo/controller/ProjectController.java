@@ -6,8 +6,7 @@ import com.cydeo.service.ProjectService;
 import com.cydeo.service.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,21 +24,59 @@ public class ProjectController {
     }
 
     @GetMapping("/create")
-    public String createProject(Model model){
+    public String createProject(Model model) {
 
         model.addAttribute("project", new ProjectDTO());
         model.addAttribute("projects", projectService.findAll());
 
-        List<UserDTO> managers = userService.findAll().stream()
-                .filter(userDTO -> userDTO.getRole().getDescription().equals("Manager"))
-                .collect(Collectors.toList());
+
 //the list above works fine, just for some reason it is skipping the first user in the list
 
-        model.addAttribute("managers", managers);
+        model.addAttribute("managers", userService.findManagers());
 
 //        model.addAttribute("managers", userService.findAll());
 
         return "project/create";
     }
+
+    @PostMapping("/create")
+    public String insertProject(ProjectDTO project) {
+
+        projectService.save(project);
+
+        return "redirect:/project/create";
+    }
+
+    @GetMapping("/delete/{projectcode}")
+    public String deleteProject(@PathVariable("projectcode") String projectCode) {
+        projectService.deleteById(projectCode);
+        return "redirect:/project/create";
+
+    }
+
+    @GetMapping("/complete/{projectcode}")
+    public String completeProject(@PathVariable("projectcode") String projectCode) {
+        projectService.complete(projectService.findById(projectCode));
+        return "redirect:/project/create";
+    }
+
+    @GetMapping("/update/{projectcode}")
+    public String editProject(@PathVariable("projectcode") String projectCode, Model model){
+
+        model.addAttribute("project", projectService.findById(projectCode));
+        model.addAttribute("projects", projectService.findAll());
+        model.addAttribute("managers", userService.findManagers());
+
+        return "project/update";
+    }
+
+    @PostMapping("/update")
+    public String updateProject(@ModelAttribute("project") ProjectDTO project){
+
+        projectService.update(project);
+
+        return "redirect:/project/create";
+    }
+
 
 }
